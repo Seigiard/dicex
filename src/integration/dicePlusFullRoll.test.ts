@@ -5,6 +5,7 @@ import {
   resetObrCalls,
   simulateBroadcast,
   flushPromises,
+  allowDicePlusSource,
 } from "./setup";
 import { mountDicePlusBackgroundListeners } from "../plugin/dicePlusBackgroundListeners";
 import { createDicePlusInternalRollHandler } from "../plugin/dicePlusInternalRollHandler";
@@ -27,6 +28,7 @@ describe("Dice+ full external roll integration", () => {
   beforeEach(() => {
     resetStores();
     resetObrCalls();
+    allowDicePlusSource("com.example.forge");
     clearPendingRollRequest();
     unsubBg = mountDicePlusBackgroundListeners();
     unsubInternal = createDicePlusInternalRollHandler();
