@@ -5,8 +5,10 @@ import Box from "@mui/material/Box";
 
 import { PopoverTray } from "./PopoverTray";
 import { getPluginId } from "./getPluginId";
+import { useGmRollRevealSubscription } from "./gmRollReveal";
 
 export function PopoverTrays() {
+  useGmRollRevealSubscription();
   const [players, setPlayers] = useState<Player[]>([]);
 
   useEffect(() => {

@@ -49,6 +49,16 @@ The first time an unlisted source asks for `everyone`, dicex opens a dialog in i
 
 The default is hidden because the failure modes aren't symmetric — a roll wrongly made public can't be taken back, while one wrongly hidden is a minor annoyance.
 
+**Private targets choose who sees a hidden roll.** The roller always sees their own dice.
+
+| `rollTarget` | Other players | GM | Rumble chat message |
+|---|---|---|---|
+| `self` | nothing | nothing | roller only |
+| `dm` / `gm_only` | nothing | dice and result in the GM's trays | roller and GM |
+| `everyone` from a source not allowed | nothing | nothing | roller and GM |
+
+For `dm` and `gm_only`, the roller's client broadcasts the roll's throws and values to remote clients, and only clients whose player is a GM keep them. The broadcast is not stored, so a GM who joins or reloads after the roll sees it as hidden. OBR broadcasts reach every client, so this keeps the roll off other players' screens, not out of their network traffic — the same as the Rumble chat message for hidden rolls. Every roll, `self` included, still goes into the roll audit log, which the GM can export.
+
 Two consequences worth knowing before integrating:
 
 - **`everyone` is hidden until the player says yes.** The roll succeeds and reports back normally; it's just hidden. There's no error. To skip the question for your extension, open an issue to have its id added to `TRUSTED_ROLL_TARGET_SOURCES`.

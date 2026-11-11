@@ -61,6 +61,7 @@ Four folders must be updated together: `src/materials/` (PBR textures), `src/mes
 | `src/helpers/buildDiceResults.ts` | Builds final dice result objects from raw roll data |
 | `src/plugin/` | All Owlbear SDK integration code |
 | `src/plugin/dicePlusProtocol.ts` | Dice+ integration contract: payload types, channels, the default source allowlist, and `resolveHidden` (roll visibility from target and the player's consent, see `dicePlusConsent.ts`) |
+| `src/plugin/gmRollReveal.ts` | Sends a `hiddenAudience: "gm"` roll's throws and values to GM clients, which replay it in their trays |
 | `src/plugin/rollLoggerSubscription.ts` | Subscribes to roll events and logs them |
 | `src/plugin/rumbleSyncSubscription.ts` | Subscribes to rumble (screen shake) sync events |
 | `src/audio/` | Procedural Web Audio API dice impact sounds |

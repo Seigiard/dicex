@@ -12,8 +12,10 @@ import { SlideTransition } from "../controls/SlideTransition";
 import { PlayerTray } from "./PlayerTray";
 import { PlayerAvatar } from "./PlayerAvatar";
 import { getPluginId } from "./getPluginId";
+import { useGmRollRevealSubscription } from "./gmRollReveal";
 
 export function PartyTrays() {
+  useGmRollRevealSubscription();
   const [players, setPlayers] = useState<Player[]>([]);
   const [focusedTray, setFocusTray] = useState<string | null>(null);
 

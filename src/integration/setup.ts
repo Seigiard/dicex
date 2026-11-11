@@ -200,6 +200,7 @@ export interface SimulateRollConfig {
   dice: { type: DiceType; value: number }[];
   bonus?: number;
   hidden?: boolean;
+  hiddenAudience?: DiceRoll["hiddenAudience"];
   advantage?: "ADVANTAGE" | "DISADVANTAGE";
 }
 
@@ -230,6 +231,7 @@ export function simulateRoll(config: SimulateRollConfig): string[] {
     dice: rollDice,
     bonus: config.bonus,
     hidden: config.hidden,
+    hiddenAudience: config.hiddenAudience,
   };
 
   useDiceRollStore.getState().startRoll(roll);
