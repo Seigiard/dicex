@@ -1,6 +1,7 @@
 import OBR from "@owlbear-rodeo/sdk";
 import { getPluginId } from "./plugin/getPluginId";
 import { mountDicePlusBackgroundListeners } from "./plugin/dicePlusBackgroundListeners";
+import { mountAccessPromptHost } from "./plugin/dicePlusAccessHost";
 
 OBR.onReady(() => {
   OBR.popover.open({
@@ -16,4 +17,5 @@ OBR.onReady(() => {
   });
 
   mountDicePlusBackgroundListeners();
+  mountAccessPromptHost(`${import.meta.env.BASE_URL}access-prompt.html`);
 });

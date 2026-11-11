@@ -38,6 +38,16 @@ A visibility toggle that defaults to hidden for GMs and visible for players. Hid
 
 Other Owlbear Rodeo extensions can ask dicex to roll on their behalf, using the Dice+ broadcast protocol. A request is sent on `dice-plus/roll-request` with `{ destination: "LOCAL" }`; the result comes back on `{source}/roll-result`, or an error on `{source}/roll-error`. The authoritative payload types are exported from `src/plugin/dicePlusProtocol.ts`.
 
+**The GM decides which extensions may roll.** Access is per room and denied by default. The GM's answers are stored in room metadata under `rodeo.owlbear.dice/access` as `{ allowed: string[], denied: string[] }`, keyed by `source`.
+
+- **First roll from an unknown source waits for the GM.** Dicex asks every GM in the room with a modal: *Extension `<source>` wants to roll dice in this room. Allow?* (**Allow** / **Deny**). The first GM to answer decides; the other GMs' modals close. The request waits up to 25 seconds (`ACCESS_DECISION_TIMEOUT_MS`), then rolls on Allow or fails on Deny or no answer.
+- **No GM in the room, no access.** A roll request from a source without an answer fails at once.
+- **Errors** arrive on `{source}/roll-error` with `error` set to `"not-permitted"` (denied, or no answer within 25 s) or `"no-gm"` (no GM in the room).
+- **Ask up front** with `dice-plus/request-access` `{ requestId, source }` (`destination: "LOCAL"`). The reply arrives on `{source}/access` as `{ requestId, status }`, where `status` is `"allowed"`, `"denied"`, `"no-gm"`, or `"pending"`. After `"pending"`, a second reply with the same `requestId` follows: `"allowed"`, `"denied"`, or `"timeout"` after 25 s without an answer.
+- **Check without asking**: add `source` to the `dice-plus/isReady` request, and the reply carries `permitted: boolean`. Without `source`, the reply keeps its old shape.
+- **Change an answer** in Dicex: Tools → *Extension Access* (GM only) lists allowed and denied extensions. Remove one to be asked again on its next roll.
+- **`source` is self-declared.** This stops rolls nobody asked for, not an extension that pretends to be another one; any extension in the room can also write room metadata.
+
 **The caller chooses who sees the roll.** A request carries a `rollTarget`, and dicex does what it says, whatever the `source`. The roller always sees their own dice.
 
 | `rollTarget` | Other players | GM | Rumble chat message |
@@ -48,7 +58,7 @@ Other Owlbear Rodeo extensions can ask dicex to roll on their behalf, using the 
 
 For `dm` and `gm_only`, the roller's client broadcasts the roll's throws and values to remote clients, and only clients whose player is a GM keep them. The broadcast is not stored, so a GM who joins or reloads after the roll sees it as hidden. OBR broadcasts reach every client, so this keeps the roll off other players' screens, not out of their network traffic — the same as the Rumble chat message for hidden rolls. Every roll, `self` included, still goes into the roll audit log, which the GM can export.
 
-**Send `everyone` only for a roll that should be public.** If your extension lets the player choose, map that choice to `rollTarget`; dicex does not ask again.
+**Send `everyone` only for a roll that should be public.** If your extension lets the player choose, map that choice to `rollTarget`; dicex does not ask the player about visibility.
 
 **Dice+ rolls never alter the user's tray toggle.** Visibility is passed per-roll, so a request cannot leave the user's own hidden setting changed.
 

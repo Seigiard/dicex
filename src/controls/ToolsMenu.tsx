@@ -15,6 +15,7 @@ import Divider from "@mui/material/Divider";
 import Switch from "@mui/material/Switch";
 import KeyboardIcon from "@mui/icons-material/KeyboardRounded";
 import StorageIcon from "@mui/icons-material/SdStorageRounded";
+import ExtensionIcon from "@mui/icons-material/ExtensionRounded";
 import OBR from "@owlbear-rodeo/sdk";
 
 import { useDiceControlsStore } from "./store";
@@ -26,6 +27,7 @@ import { saveSetting } from "../plugin/userSettingsStorage";
 import { combinePlayerLogs, triggerJsonDownload } from "../plugin/rollLogExport";
 import { getPlayerLogs, clearPlayerLogs, getManifest, SceneLogManifest } from "../plugin/rollLogStorage";
 import { StorageStatusDialog } from "./StorageStatusDialog";
+import { ExtensionAccessDialog } from "./ExtensionAccessDialog";
 
 export function ToolsMenu() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -35,6 +37,7 @@ export function ToolsMenu() {
   const [isGM, setIsGM] = useState(false);
   const [isPlugin, setIsPlugin] = useState(false);
   const [storageDialogOpen, setStorageDialogOpen] = useState(false);
+  const [accessDialogOpen, setAccessDialogOpen] = useState(false);
   const [manifest, setManifest] = useState<Record<string, SceneLogManifest>>({});
 
   const toggleFairnessTester = useDiceControlsStore(
@@ -220,6 +223,19 @@ export function ToolsMenu() {
             </ListItemText>
           </MenuItem>
         )}
+        {isPlugin && isGM && (
+          <MenuItem
+            onClick={() => {
+              handleClose();
+              setAccessDialogOpen(true);
+            }}
+          >
+            <ListItemIcon>
+              <ExtensionIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Extension Access</ListItemText>
+          </MenuItem>
+        )}
       </Menu>
       <Menu
         anchorEl={presetAnchorEl}
@@ -254,6 +270,12 @@ export function ToolsMenu() {
           open={editorOpen}
           onClose={() => setEditorOpen(false)}
           onSave={() => {}}
+        />
+      )}
+      {isPlugin && isGM && (
+        <ExtensionAccessDialog
+          open={accessDialogOpen}
+          onClose={() => setAccessDialogOpen(false)}
         />
       )}
       <StorageStatusDialog
