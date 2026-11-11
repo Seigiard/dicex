@@ -60,7 +60,7 @@ Four folders must be updated together: `src/materials/` (PBR textures), `src/mes
 | `src/helpers/notationParser.ts` | Parses dice notation strings (e.g. `2d6+3`) into structured data |
 | `src/helpers/buildDiceResults.ts` | Builds final dice result objects from raw roll data |
 | `src/plugin/` | All Owlbear SDK integration code |
-| `src/plugin/dicePlusProtocol.ts` | Dice+ integration contract: payload types, channels, and the `resolveHidden` source allowlist governing roll visibility |
+| `src/plugin/dicePlusProtocol.ts` | Dice+ integration contract: payload types, channels, the default source allowlist, and `resolveHidden` (roll visibility from target and the player's consent, see `dicePlusConsent.ts`) |
 | `src/plugin/rollLoggerSubscription.ts` | Subscribes to roll events and logs them |
 | `src/plugin/rumbleSyncSubscription.ts` | Subscribes to rumble (screen shake) sync events |
 | `src/audio/` | Procedural Web Audio API dice impact sounds |

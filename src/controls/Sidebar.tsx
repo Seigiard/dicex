@@ -19,6 +19,7 @@ import { DiceRollSync } from "../plugin/DiceRollSync";
 import { RumbleSync } from "../plugin/RumbleSync";
 import { RollLogger } from "../plugin/RollLogger";
 import { DicePlusHandler } from "../plugin/DicePlusHandler";
+import { DicePlusConsentDialog } from "../plugin/DicePlusConsentDialog";
 import { PartyTrays } from "../plugin/PartyTrays";
 import { ResizeObserver as PluginResizeObserver } from "../plugin/ResizeObserver";
 
@@ -71,6 +72,7 @@ export function Sidebar() {
           <RumbleSync />
           <RollLogger />
           <DicePlusHandler />
+          <DicePlusConsentDialog />
           <PartyTrays />
           <PluginResizeObserver />
         </PluginGate>
