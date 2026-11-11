@@ -3,6 +3,7 @@ import {
   isRollRequest,
   isIsReadyRequest,
   resolveHidden,
+  resolveHiddenAudience,
   TRUSTED_ROLL_TARGET_SOURCES,
 } from "./dicePlusProtocol";
 
@@ -32,6 +33,24 @@ describe("resolveHidden", () => {
     expect(resolveHidden(untrusted, "self")).toBe(true);
     expect(resolveHidden(untrusted, "dm")).toBe(true);
     expect(resolveHidden(untrusted, "gm_only")).toBe(true);
+  });
+});
+
+describe("resolveHiddenAudience", () => {
+  it("keeps a self roll to the roller", () => {
+    expect(resolveHiddenAudience("self")).toBe("self");
+  });
+
+  it("shows a dm roll to the GM", () => {
+    expect(resolveHiddenAudience("dm")).toBe("gm");
+  });
+
+  it("shows a gm_only roll to the GM", () => {
+    expect(resolveHiddenAudience("gm_only")).toBe("gm");
+  });
+
+  it("gives everyone no audience, so its hidden fallback stays classic", () => {
+    expect(resolveHiddenAudience("everyone")).toBeUndefined();
   });
 });
 

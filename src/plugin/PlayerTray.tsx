@@ -95,13 +95,19 @@ export function PlayerTray({
 }
 
 function PlayerTrayResults({ player }: { player?: Player }) {
-  const { diceRoll, finalValue, result, finishedRollValues, finishedRolling } =
-    usePlayerDice(player);
+  const {
+    diceRoll,
+    finalValue,
+    result,
+    finishedRollValues,
+    finishedRolling,
+    revealedToGm,
+  } = usePlayerDice(player);
 
   const [resultsExpanded, setResultsExpanded] = useState(false);
   return (
     <>
-      {diceRoll?.hidden && (
+      {diceRoll?.hidden && !revealedToGm && (
         <Backdrop open sx={{ position: "absolute" }}>
           <Tooltip title="Hidden Roll">
             <HiddenIcon htmlColor="white" />

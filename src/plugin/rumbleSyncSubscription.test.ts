@@ -152,4 +152,20 @@ describe("RumbleSync subscription", () => {
     const payload = chatPayload();
     expect(payload.targetId).toBe("gm-1");
   });
+
+  it("sends a self-only hidden roll to the roller alone", async () => {
+    // #given
+    useDiceControlsStore.setState({ activeNotation: "1d20" });
+    // #when
+    simulateRoll({
+      dice: [{ type: "D20", value: 11 }],
+      hidden: true,
+      hiddenAudience: "self",
+    });
+    await flushPromises();
+    // #then
+    expect(
+      obrCalls.broadcast.map((b) => (b.data as any).data.targetId)
+    ).toEqual([obrConfig.playerId]);
+  });
 });

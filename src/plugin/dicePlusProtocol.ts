@@ -1,3 +1,5 @@
+import { HiddenAudience } from "../types/DiceRoll";
+
 /** Dice+ broadcast channel constants and payload types.
  *  Reference: docs/superpowers/specs/2026-05-05-dice-plus-protocol-design.md
  */
@@ -94,6 +96,24 @@ export const TRUSTED_ROLL_TARGET_SOURCES: readonly string[] = [
 export function resolveHidden(source: string, target: RollTarget): boolean {
   if (target !== "everyone") return true;
   return !TRUSTED_ROLL_TARGET_SOURCES.includes(source);
+}
+
+/**
+ * Narrow a hidden Dice+ roll to its audience. "everyone" has none: when it
+ * falls back to hidden, it is the classic hidden roll.
+ */
+export function resolveHiddenAudience(
+  target: RollTarget
+): HiddenAudience | undefined {
+  switch (target) {
+    case "self":
+      return "self";
+    case "dm":
+    case "gm_only":
+      return "gm";
+    case "everyone":
+      return undefined;
+  }
 }
 
 export function isRollRequest(data: unknown): data is RollRequest {

@@ -9,35 +9,51 @@ import { DiceRoll } from "../types/DiceRoll";
 import { DiceThrow } from "../types/DiceThrow";
 import { DiceTransform } from "../types/DiceTransform";
 import { getPluginId } from "./getPluginId";
+import { matchGmRollReveal, useGmRollRevealStore } from "./gmRollReveal";
 
 export function usePlayerDice(player?: Player) {
   const diceRoll = useMemo(() => {
     return player?.metadata[getPluginId("roll")] as DiceRoll | undefined;
   }, [player]);
 
+  // On a GM client, a GM-audience hidden roll is replayed from the inputs
+  // the roller broadcast, since player metadata leaves them out.
+  const reveal = useGmRollRevealStore((state) =>
+    player ? state.reveals[player.connectionId] : undefined
+  );
+  const gmReveal = useMemo(
+    () => matchGmRollReveal(reveal, diceRoll),
+    [reveal, diceRoll]
+  );
+  const revealedToGm = Boolean(gmReveal);
+
   const rollThrows = useMemo(() => {
+    if (gmReveal) return gmReveal.rollThrows;
     return player?.metadata[getPluginId("rollThrows")] as
       | Record<string, DiceThrow>
       | undefined;
-  }, [player]);
+  }, [player, gmReveal]);
 
   const rollValues = useMemo(() => {
+    if (gmReveal) return gmReveal.rollValues;
     return player?.metadata[getPluginId("rollValues")] as
       | Record<string, number | null>
       | undefined;
-  }, [player]);
+  }, [player, gmReveal]);
 
   const rollTransforms = useMemo(() => {
+    if (gmReveal) return gmReveal.rollTransforms;
     return player?.metadata[getPluginId("rollTransforms")] as
       | Record<string, DiceTransform | null>
       | undefined;
-  }, [player]);
+  }, [player, gmReveal]);
 
   const rollNotationComponents = useMemo(() => {
+    if (gmReveal) return gmReveal.notationComponents;
     return player?.metadata[getPluginId("rollNotationComponents")] as
       | NotationComponent[]
       | undefined;
-  }, [player]);
+  }, [player, gmReveal]);
 
   const finishedRollTransforms = useMemo(() => {
     if (!rollTransforms) {
@@ -112,5 +128,6 @@ export function usePlayerDice(player?: Player) {
     result,
     finishedRollValues,
     finishedRolling,
+    revealedToGm,
   };
 }

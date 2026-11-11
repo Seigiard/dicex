@@ -1,5 +1,8 @@
+import { HiddenAudience } from "../types/DiceRoll";
+
 interface GetRumbleRecipientsInput {
   hidden: boolean;
+  hiddenAudience?: HiddenAudience;
   playerName: string;
   playerObrId: string;
   playerRole: "GM" | "PLAYER";
@@ -17,6 +20,9 @@ export function getRumbleRecipients(
 ): RumbleRecipient[] {
   if (!input.hidden) {
     return [{ target: "Everyone", targetId: "0000" }];
+  }
+  if (input.hiddenAudience === "self") {
+    return [{ target: input.playerName, targetId: input.playerObrId }];
   }
   if (input.playerRole === "GM") {
     return [{ target: input.gmName, targetId: input.gmObrId }];

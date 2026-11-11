@@ -77,6 +77,7 @@ export function createRumbleSyncSubscription(): () => void {
 
       const recipients = getRumbleRecipients({
         hidden,
+        hiddenAudience: roll.hiddenAudience,
         playerName,
         playerObrId,
         playerRole: role,

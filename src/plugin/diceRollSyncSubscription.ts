@@ -3,8 +3,9 @@ import { useDiceRollStore } from "../dice/store";
 import { useDiceControlsStore } from "../controls/store";
 import { getDieFromDice } from "../helpers/getDieFromDice";
 import { getPluginId } from "./getPluginId";
+import { buildGmRollReveal, GM_ROLL_REVEAL_CHANNEL } from "./gmRollReveal";
 
-/** Publish the local roll to player metadata. */
+/** Publish the local roll to player metadata, and to GMs when the roll is for them. */
 export function createDiceRollSyncSubscription(): () => void {
   let prevIds: string[] = [];
   return useDiceRollStore.subscribe((state) => {
@@ -42,10 +43,11 @@ export function createDiceRollSyncSubscription(): () => void {
       // aren't encoded in the roll structure. Remote viewers need them to
       // reproduce the same total/dropped result via buildDiceResults. Omit
       // for hidden rolls (values are hidden anyway, and so the notation).
+      const activeNotationComponents =
+        useDiceControlsStore.getState().activeNotationComponents;
       const notationComponents = state.roll?.hidden
         ? undefined
-        : useDiceControlsStore.getState().activeNotationComponents ??
-          undefined;
+        : activeNotationComponents ?? undefined;
       OBR.player.setMetadata({
         [getPluginId("roll")]: state.roll,
         [getPluginId("rollThrows")]: throws,
@@ -54,6 +56,14 @@ export function createDiceRollSyncSubscription(): () => void {
         [getPluginId("rollNotationComponents")]: notationComponents,
       });
 
+      const reveal = buildGmRollReveal(state, activeNotationComponents);
+      if (reveal) {
+        OBR.broadcast
+          .sendMessage(GM_ROLL_REVEAL_CHANNEL, reveal, {
+            destination: "REMOTE",
+          })
+          .catch((e) => console.warn("GM roll reveal failed", e));
+      }
     }
   });
 }

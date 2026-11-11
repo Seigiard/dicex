@@ -27,12 +27,17 @@ export function PopoverTray({
   onToggle: (connectionId: string, show: boolean) => void;
   onOpen: (connectionId: string) => void;
 }) {
-  const { diceRoll, finalValue, finishedRolling, finishedRollTransforms } =
-    usePlayerDice(player);
+  const {
+    diceRoll,
+    finalValue,
+    finishedRolling,
+    finishedRollTransforms,
+    revealedToGm,
+  } = usePlayerDice(player);
 
   const theme = useTheme();
 
-  const hidden = !diceRoll || diceRoll.hidden;
+  const hidden = !diceRoll || (diceRoll.hidden && !revealedToGm);
 
   const [timedOut, setTimedOut] = useState(finishedRolling);
 
@@ -110,6 +115,7 @@ export function PopoverTray({
               }}
               noWrap
             >
+              {revealedToGm && "\uD83D\uDD12 "}
               {player?.name}
               {finishedRolling && <span> | {finalValue}</span>}
             </Typography>

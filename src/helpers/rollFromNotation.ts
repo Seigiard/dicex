@@ -1,6 +1,7 @@
 import { getDiceToRoll, useDiceControlsStore } from "../controls/store";
 import { useDiceRollStore } from "../dice/store";
 import { resolveNotationAgainstSet } from "./resolveNotationAgainstSet";
+import { HiddenAudience } from "../types/DiceRoll";
 
 /**
  * Resolve a notation string against the current dice set, wipe any tray
@@ -8,10 +9,11 @@ import { resolveNotationAgainstSet } from "./resolveNotationAgainstSet";
  *
  * `hidden` overrides the tray's hidden toggle for this roll only, without
  * modifying it; callers that omit it inherit the user's current setting.
+ * `hiddenAudience` narrows who sees the roll when it ends up hidden.
  */
 export function rollFromNotation(
   notation: string,
-  options?: { hidden?: boolean }
+  options?: { hidden?: boolean; hiddenAudience?: HiddenAudience }
 ): boolean {
   let resolved;
   try {
@@ -37,8 +39,15 @@ export function rollFromNotation(
     return false;
   }
 
+  const hidden = options?.hidden ?? controls.diceHidden;
+  const hiddenAudience = hidden ? options?.hiddenAudience : undefined;
   useDiceRollStore
     .getState()
-    .startRoll({ dice, bonus, hidden: options?.hidden ?? controls.diceHidden }, 1);
+    .startRoll(
+      hiddenAudience
+        ? { dice, bonus, hidden, hiddenAudience }
+        : { dice, bonus, hidden },
+      1
+    );
   return true;
 }

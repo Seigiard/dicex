@@ -175,4 +175,55 @@ describe("dicePlusInternalRollHandler", () => {
     expect(useDiceRollStore.getState().roll?.hidden).toBe(false);
     expect(useDiceControlsStore.getState().diceHidden).toBe(true);
   });
+
+  describe("hidden audience", () => {
+    function request(rollTarget: string, source = "com.example.forge") {
+      return {
+        rollId: "r-aud",
+        playerId: "p-1",
+        playerName: "Alice",
+        rollTarget,
+        diceNotation: "1d20",
+        showResults: true,
+        timestamp: 0,
+        source,
+      };
+    }
+
+    it("narrows a self roll to the roller", async () => {
+      // #when
+      simulateBroadcast(INTERNAL_ROLL_CHANNEL, request("self"));
+      await flushPromises();
+      // #then
+      expect(useDiceRollStore.getState().roll?.hiddenAudience).toBe("self");
+    });
+
+    it("opens a dm roll to the GM", async () => {
+      // #when
+      simulateBroadcast(INTERNAL_ROLL_CHANNEL, request("dm"));
+      await flushPromises();
+      // #then
+      expect(useDiceRollStore.getState().roll?.hiddenAudience).toBe("gm");
+    });
+
+    it("opens a gm_only roll to the GM", async () => {
+      // #when
+      simulateBroadcast(INTERNAL_ROLL_CHANNEL, request("gm_only"));
+      await flushPromises();
+      // #then
+      expect(useDiceRollStore.getState().roll?.hiddenAudience).toBe("gm");
+    });
+
+    it("leaves a trusted everyone roll visible with no audience", async () => {
+      // #when
+      simulateBroadcast(
+        INTERNAL_ROLL_CHANNEL,
+        request("everyone", TRUSTED_ROLL_TARGET_SOURCES[0])
+      );
+      await flushPromises();
+      // #then
+      const roll = useDiceRollStore.getState().roll;
+      expect([roll?.hidden, roll?.hiddenAudience]).toEqual([false, undefined]);
+    });
+  });
 });
