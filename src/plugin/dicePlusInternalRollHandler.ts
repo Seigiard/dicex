@@ -8,6 +8,7 @@ import {
   RollRequest,
 } from "./dicePlusProtocol";
 import { setPendingRollRequest } from "./dicePlusPendingRequest";
+import { publicRollConsent, useDicePlusConsentStore } from "./dicePlusConsent";
 
 /**
  * Mount the action-sidebar-side Dice+ listeners.
@@ -33,10 +34,17 @@ export function createDicePlusInternalRollHandler(): () => void {
       rollTarget: request.rollTarget,
     });
 
+    const consent = publicRollConsent.get(request.source);
+    // This roll stays hidden while the question is open; the answer applies
+    // to the source's next rolls.
+    if (request.rollTarget === "everyone" && consent === "unasked") {
+      useDicePlusConsentStore.getState().ask(request.source);
+    }
+
     // Pass hidden per-roll rather than through the control store: the tray's
     // toggle belongs to the user, and a Dice+ roll must not leave it changed.
     rollFromNotation(request.diceNotation, {
-      hidden: resolveHidden(request.source, request.rollTarget),
+      hidden: resolveHidden(request.rollTarget, consent),
     });
   });
 
