@@ -69,8 +69,10 @@ Two consequences worth knowing before integrating:
 Add this fork (Dicex (Muster Roll)) to Owlbear Rodeo using this manifest URL. The upstream extension is at `https://abottchen.github.io/dicex/manifest.json`.
 
 ```
-https://seigiard.github.io/dicex/manifest.json
+https://seigiard.com/dicex/manifest.json
 ```
+
+`https://seigiard.github.io/dicex/` redirects there; the redirect carries no CORS header, so install from the URL above.
 
 ## How it Works
 
