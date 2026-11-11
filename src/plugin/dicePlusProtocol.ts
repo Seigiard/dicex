@@ -89,6 +89,7 @@ export interface RollErrorMessage {
  */
 export const TRUSTED_ROLL_TARGET_SOURCES: readonly string[] = [
   "com.abottchen.obr-forge-helper",
+  "app.muster-roll",
 ];
 
 /** The local player's answer to "may this source show my rolls to everyone?". */
