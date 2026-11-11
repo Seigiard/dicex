@@ -20,8 +20,7 @@ export function AccessPrompt() {
   );
 
   async function answer(source: string, allowed: boolean) {
-    // Only a GM's answer counts; the host opens this modal for GMs only.
-    if ((await OBR.player.getRole()) !== "GM") return;
+    // Rejects on a client that is not a GM's; the host opens this modal for GMs only.
     await recordAccessDecision(source, allowed);
     const rest = asks.filter((ask) => ask.source !== source);
     setAsks(rest);

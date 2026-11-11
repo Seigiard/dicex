@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { obrConfig, resetObrCalls } from "../integration/setup";
+import { obrCalls, obrConfig, resetObrCalls } from "../integration/setup";
 import {
   ACCESS_METADATA_KEY,
   accessDecision,
@@ -56,6 +56,7 @@ describe("withDecision", () => {
 describe("recording a GM's answer", () => {
   beforeEach(() => {
     resetObrCalls();
+    obrConfig.playerRole = "GM";
   });
 
   it("stores the first answer in room metadata", async () => {
@@ -90,5 +91,38 @@ describe("recording a GM's answer", () => {
       allowed: [],
       denied: [],
     });
+  });
+});
+
+describe("changing access from a player's client", () => {
+  beforeEach(() => {
+    resetObrCalls();
+    obrConfig.playerRole = "PLAYER";
+  });
+
+  it("refuses to record an answer", async () => {
+    // #when
+    const result = recordAccessDecision("com.example.a", true);
+    // #then
+    await expect(result).rejects.toThrow("Only a GM can change extension access");
+  });
+
+  it("leaves room metadata untouched when refusing to record", async () => {
+    // #when
+    await recordAccessDecision("com.example.a", true).catch(() => {});
+    // #then
+    expect(obrCalls.roomSetMetadata).toEqual([]);
+  });
+
+  it("refuses to forget an answer", async () => {
+    // #given
+    obrConfig.roomMetadata[ACCESS_METADATA_KEY] = {
+      allowed: ["com.example.a"],
+      denied: [],
+    };
+    // #when
+    await forgetAccessDecision("com.example.a").catch(() => {});
+    // #then
+    expect(obrCalls.roomSetMetadata).toEqual([]);
   });
 });

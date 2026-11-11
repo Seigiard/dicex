@@ -7,6 +7,15 @@ import { getPluginId } from "./getPluginId";
  * Kept in room metadata so every client reads the same answer and it lasts
  * as long as the room. Deny by default: a source in neither list must be
  * allowed by a GM before it can roll.
+ *
+ * This is a courtesy prompt. It stops rolls nobody asked for; it does not
+ * stop impersonation. `source` is whatever the requesting extension writes,
+ * so one extension can claim another's id. A per-source secret would not
+ * help: OBR broadcasts and room metadata are readable by every extension in
+ * the room, so a secret sent on `${source}/access` reaches the impostor too.
+ * Room metadata is also writable by any client, so an extension on a
+ * player's client could edit this list directly. Dicex only keeps its own
+ * code from writing the list on a client that is not a GM's.
  */
 export const ACCESS_METADATA_KEY = getPluginId("access");
 
@@ -76,12 +85,14 @@ export async function isGmInRoom(): Promise<boolean> {
 
 /**
  * Record a GM's answer. The first answer wins: if another GM already
- * decided, that answer stays and is returned.
+ * decided, that answer stays and is returned. Rejects on a client that is
+ * not a GM's.
  */
 export async function recordAccessDecision(
   source: string,
   allowed: boolean
 ): Promise<AccessDecision> {
+  await assertGm();
   const list = readAccessList(await OBR.room.getMetadata());
   const existing = accessDecision(list, source);
   if (existing !== "unknown") return existing;
@@ -91,7 +102,9 @@ export async function recordAccessDecision(
   return allowed ? "allowed" : "denied";
 }
 
+/** Remove an answer so the GM is asked again. Rejects on a client that is not a GM's. */
 export async function forgetAccessDecision(source: string): Promise<void> {
+  await assertGm();
   const list = readAccessList(await OBR.room.getMetadata());
   await OBR.room.setMetadata({
     [ACCESS_METADATA_KEY]: withoutSource(list, source),
@@ -159,6 +172,12 @@ export function isAccessAsk(data: unknown): data is AccessAsk {
   if (typeof data !== "object" || data === null) return false;
   const d = data as Record<string, unknown>;
   return typeof d.source === "string" && typeof d.playerName === "string";
+}
+
+async function assertGm(): Promise<void> {
+  if ((await OBR.player.getRole()) !== "GM") {
+    throw new Error("Only a GM can change extension access");
+  }
 }
 
 function stringList(value: unknown): string[] {
