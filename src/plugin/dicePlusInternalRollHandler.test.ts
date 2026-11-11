@@ -19,20 +19,6 @@ import {
   INTERNAL_ROLL_CHANNEL,
   TRUSTED_ROLL_TARGET_SOURCES,
 } from "./dicePlusProtocol";
-import { useDicePlusConsentStore } from "./dicePlusConsent";
-
-function rollRequest(source: string, rollTarget: string, rollId = "r-c") {
-  return {
-    rollId,
-    playerId: "p-1",
-    playerName: "Alice",
-    rollTarget,
-    diceNotation: "1d20",
-    showResults: true,
-    timestamp: 0,
-    source,
-  };
-}
 
 describe("dicePlusInternalRollHandler", () => {
   let unsubscribe: () => void;
@@ -41,7 +27,6 @@ describe("dicePlusInternalRollHandler", () => {
     resetStores();
     resetObrCalls();
     clearPendingRollRequest();
-    useDicePlusConsentStore.setState({ pending: [] });
     unsubscribe = createDicePlusInternalRollHandler();
   });
 
@@ -190,79 +175,6 @@ describe("dicePlusInternalRollHandler", () => {
     expect(useDiceRollStore.getState().roll?.hidden).toBe(false);
     expect(useDiceControlsStore.getState().diceHidden).toBe(true);
   });
-
-  describe("public-roll consent", () => {
-    it("asks the player when an unknown source wants rollTarget=everyone", async () => {
-      // #given
-      const source = "com.example.consent-ask";
-      // #when
-      simulateBroadcast(INTERNAL_ROLL_CHANNEL, rollRequest(source, "everyone"));
-      await flushPromises();
-      // #then
-      expect(useDicePlusConsentStore.getState().pending).toEqual([source]);
-    });
-
-    it("shows the next roll after the player allows the source", async () => {
-      // #given
-      const source = "com.example.consent-allow";
-      simulateBroadcast(INTERNAL_ROLL_CHANNEL, rollRequest(source, "everyone", "r-a1"));
-      await flushPromises();
-      useDicePlusConsentStore.getState().answer(source, true);
-      // #when
-      simulateBroadcast(INTERNAL_ROLL_CHANNEL, rollRequest(source, "everyone", "r-a2"));
-      await flushPromises();
-      // #then
-      expect(useDiceRollStore.getState().roll?.hidden).toBe(false);
-    });
-
-    it("keeps rolls hidden after the player denies the source", async () => {
-      // #given
-      const source = "com.example.consent-deny";
-      simulateBroadcast(INTERNAL_ROLL_CHANNEL, rollRequest(source, "everyone", "r-d1"));
-      await flushPromises();
-      useDicePlusConsentStore.getState().answer(source, false);
-      // #when
-      simulateBroadcast(INTERNAL_ROLL_CHANNEL, rollRequest(source, "everyone", "r-d2"));
-      await flushPromises();
-      // #then
-      expect(useDiceRollStore.getState().roll?.hidden).toBe(true);
-    });
-
-    it("does not ask again after the player denies the source", async () => {
-      // #given
-      const source = "com.example.consent-deny-again";
-      simulateBroadcast(INTERNAL_ROLL_CHANNEL, rollRequest(source, "everyone", "r-e1"));
-      await flushPromises();
-      useDicePlusConsentStore.getState().answer(source, false);
-      // #when
-      simulateBroadcast(INTERNAL_ROLL_CHANNEL, rollRequest(source, "everyone", "r-e2"));
-      await flushPromises();
-      // #then
-      expect(useDicePlusConsentStore.getState().pending).toEqual([]);
-    });
-
-    it("does not ask for a built-in trusted source", async () => {
-      // #given
-      const source = TRUSTED_ROLL_TARGET_SOURCES[0];
-      // #when
-      simulateBroadcast(INTERNAL_ROLL_CHANNEL, rollRequest(source, "everyone"));
-      await flushPromises();
-      // #then
-      expect(useDicePlusConsentStore.getState().pending).toEqual([]);
-    });
-
-    it("does not ask when the source requests a private target", async () => {
-      // #given
-      const source = "com.example.consent-private";
-      // #when
-      simulateBroadcast(INTERNAL_ROLL_CHANNEL, rollRequest(source, "self"));
-      simulateBroadcast(INTERNAL_ROLL_CHANNEL, rollRequest(source, "dm"));
-      simulateBroadcast(INTERNAL_ROLL_CHANNEL, rollRequest(source, "gm_only"));
-      await flushPromises();
-      // #then
-      expect(useDicePlusConsentStore.getState().pending).toEqual([]);
-      });
-    });
 
   describe("hidden audience", () => {
     function request(rollTarget: string, source = "com.example.forge") {

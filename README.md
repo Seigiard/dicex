@@ -38,16 +38,14 @@ A visibility toggle that defaults to hidden for GMs and visible for players. Hid
 
 Other Owlbear Rodeo extensions can ask dicex to roll on their behalf, using the Dice+ broadcast protocol. A request is sent on `dice-plus/roll-request` with `{ destination: "LOCAL" }`; the result comes back on `{source}/roll-result`, or an error on `{source}/roll-error`. The authoritative payload types are exported from `src/plugin/dicePlusProtocol.ts`.
 
-**Public rolls need the player's consent.** A request carries a `rollTarget`, but `"everyone"` produces a visible roll *only* when the requesting extension's `source` id is allowed. A source is allowed when it is listed in `TRUSTED_ROLL_TARGET_SOURCES`, or when the local player allowed it. Every other combination is hidden:
+**Roll visibility is source-gated.** A request carries a `rollTarget`, but `"everyone"` produces a visible roll *only* when the requesting extension's `source` id is listed in `TRUSTED_ROLL_TARGET_SOURCES`. Every other combination is hidden:
 
-| `rollTarget` | Allowed source | Not yet answered | Denied |
-|---|---|---|---|
-| `everyone` | visible | hidden, and the player is asked | hidden |
-| `self` / `dm` / `gm_only` | hidden | hidden | hidden |
+| `rollTarget` | Trusted source | Any other source |
+|---|---|---|
+| `everyone` | visible | hidden |
+| `self` / `dm` / `gm_only` | hidden | hidden |
 
-The first time an unlisted source asks for `everyone`, dicex opens a dialog in its sidebar: *Show rolls to everyone?* with **Allow** and **Keep hidden**. That roll stays hidden; the answer applies to the source's next rolls. Dicex asks each source once and remembers the answer in the browser's `localStorage`, so it holds for every room the player joins from that browser. If the browser blocks storage, the answer lasts until the page reloads.
-
-The default is hidden because the failure modes aren't symmetric — a roll wrongly made public can't be taken back, while one wrongly hidden is a minor annoyance.
+This is an allowlist because the failure modes aren't symmetric — a roll wrongly made public can't be taken back, while one wrongly hidden is a minor annoyance. An unrecognized source is therefore always hidden.
 
 **Private targets choose who sees a hidden roll.** The roller always sees their own dice.
 
@@ -55,13 +53,13 @@ The default is hidden because the failure modes aren't symmetric — a roll wron
 |---|---|---|---|
 | `self` | nothing | nothing | roller only |
 | `dm` / `gm_only` | nothing | dice and result in the GM's trays | roller and GM |
-| `everyone` from a source not allowed | nothing | nothing | roller and GM |
+| `everyone`, hidden by the allowlist | nothing | nothing | roller and GM |
 
 For `dm` and `gm_only`, the roller's client broadcasts the roll's throws and values to remote clients, and only clients whose player is a GM keep them. The broadcast is not stored, so a GM who joins or reloads after the roll sees it as hidden. OBR broadcasts reach every client, so this keeps the roll off other players' screens, not out of their network traffic — the same as the Rumble chat message for hidden rolls. Every roll, `self` included, still goes into the roll audit log, which the GM can export.
 
 Two consequences worth knowing before integrating:
 
-- **`everyone` is hidden until the player says yes.** The roll succeeds and reports back normally; it's just hidden. There's no error. To skip the question for your extension, open an issue to have its id added to `TRUSTED_ROLL_TARGET_SOURCES`.
+- **`everyone` fails silently if you aren't listed.** The roll succeeds and reports back normally; it's just hidden. There's no error. If your integration's rolls are unexpectedly private, this is why — open an issue to have your extension's id added.
 - **Dice+ rolls never alter the user's tray toggle.** Visibility is passed per-roll, so a request cannot leave the user's own hidden setting changed.
 
 ## Installing
