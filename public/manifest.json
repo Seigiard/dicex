@@ -1,13 +1,13 @@
 {
-  "name": "Dicex",
+  "name": "Dicex (Muster Roll)",
   "version": "2.0.0",
   "manifest_version": 1,
-  "author": "Adam Bottchen",
-  "homepage_url": "https://abottchen.github.io/dicex/",
+  "author": "Adam Bottchen; Muster Roll fork by Seigiard",
+  "homepage_url": "https://seigiard.github.io/dicex/",
   "icon": "/dicex/logo.png",
   "description": "Beautiful 3D dice extension for d20 based systems",
   "action": {
-    "title": "Dicex",
+    "title": "Dicex (Muster Roll)",
     "icon": "/dicex/icon.svg",
     "popover": "/dicex/",
     "height": 700,
