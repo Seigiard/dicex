@@ -7,9 +7,12 @@ import {
   simulateBroadcast,
 } from "./setup";
 import { mountDicePlusBackgroundListeners } from "../plugin/dicePlusBackgroundListeners";
+import OBR from "@owlbear-rodeo/sdk";
 import {
   ACCESS_ASK_CHANNEL,
-  recordAccessDecision,
+  ACCESS_METADATA_KEY,
+  readAccessList,
+  withDecision,
 } from "../plugin/dicePlusAccess";
 import {
   DICE_PLUS_IS_READY_CHANNEL,
@@ -51,6 +54,14 @@ async function settle(ms = 0): Promise<void> {
   await vi.advanceTimersByTimeAsync(ms);
 }
 
+/** A GM's client elsewhere in the room writes its answer to room metadata. */
+async function gmAnswers(source: string, allowed: boolean): Promise<void> {
+  const list = readAccessList(await OBR.room.getMetadata());
+  await OBR.room.setMetadata({
+    [ACCESS_METADATA_KEY]: withDecision(list, source, allowed),
+  });
+}
+
 function noGmInRoom(): void {
   obrConfig.playerRole = "PLAYER";
   obrConfig.partyPlayers = [];
@@ -74,7 +85,7 @@ describe("Dice+ access control", () => {
   describe("roll-request", () => {
     it("rolls for a source the GM allowed", async () => {
       // #given
-      await recordAccessDecision(SOURCE, true);
+      await gmAnswers(SOURCE, true);
       // #when
       simulateBroadcast(DICE_PLUS_ROLL_REQUEST_CHANNEL, rollRequest());
       await settle();
@@ -84,7 +95,7 @@ describe("Dice+ access control", () => {
 
     it("refuses a source the GM denied with not-permitted", async () => {
       // #given
-      await recordAccessDecision(SOURCE, false);
+      await gmAnswers(SOURCE, false);
       // #when
       simulateBroadcast(DICE_PLUS_ROLL_REQUEST_CHANNEL, rollRequest());
       await settle();
@@ -134,7 +145,7 @@ describe("Dice+ access control", () => {
       simulateBroadcast(DICE_PLUS_ROLL_REQUEST_CHANNEL, rollRequest());
       await settle();
       // #when
-      await recordAccessDecision(SOURCE, true);
+      await gmAnswers(SOURCE, true);
       await settle();
       // #then
       expect([obrCalls.actionOpenCount, rollErrors()]).toEqual([1, []]);
@@ -145,7 +156,7 @@ describe("Dice+ access control", () => {
       simulateBroadcast(DICE_PLUS_ROLL_REQUEST_CHANNEL, rollRequest());
       await settle();
       // #when
-      await recordAccessDecision(SOURCE, false);
+      await gmAnswers(SOURCE, false);
       await settle();
       // #then
       expect([rollErrors(), obrCalls.actionOpenCount]).toEqual([
@@ -211,7 +222,7 @@ describe("Dice+ access control", () => {
 
     it("answers allowed for an allowed source", async () => {
       // #given
-      await recordAccessDecision(SOURCE, true);
+      await gmAnswers(SOURCE, true);
       // #when
       requestAccess();
       await settle();
@@ -223,7 +234,7 @@ describe("Dice+ access control", () => {
 
     it("answers denied for a denied source without asking the GM", async () => {
       // #given
-      await recordAccessDecision(SOURCE, false);
+      await gmAnswers(SOURCE, false);
       // #when
       requestAccess();
       await settle();
@@ -249,7 +260,7 @@ describe("Dice+ access control", () => {
       requestAccess();
       await settle();
       // #when
-      await recordAccessDecision(SOURCE, true);
+      await gmAnswers(SOURCE, true);
       await settle();
       // #then
       expect(accessStatuses()).toEqual(["pending", "allowed"]);
@@ -260,7 +271,7 @@ describe("Dice+ access control", () => {
       requestAccess();
       await settle();
       // #when
-      await recordAccessDecision(SOURCE, false);
+      await gmAnswers(SOURCE, false);
       await settle();
       // #then
       expect(accessStatuses()).toEqual(["pending", "denied"]);
@@ -284,7 +295,7 @@ describe("Dice+ access control", () => {
 
     it("reports permitted: true for an allowed source", async () => {
       // #given
-      await recordAccessDecision(SOURCE, true);
+      await gmAnswers(SOURCE, true);
       // #when
       simulateBroadcast(DICE_PLUS_IS_READY_CHANNEL, {
         requestId: "q-1",
