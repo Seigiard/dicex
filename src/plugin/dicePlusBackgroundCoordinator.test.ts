@@ -139,49 +139,70 @@ describe("relayRollRequest rollIn", () => {
     obrConfig.actionIsOpen = false;
   });
 
+  function answerRollPings(): void {
+    for (const broadcast of obrCalls.broadcast) {
+      const nonce = (broadcast.data as { nonce?: string }).nonce;
+      if (!nonce) continue;
+      if (broadcast.channel === INTERNAL_PING_CHANNEL) {
+        simulateBroadcast(INTERNAL_READY_CHANNEL, { nonce });
+      }
+      if (broadcast.channel === POPOVER_PING_CHANNEL) {
+        simulateBroadcast(POPOVER_READY_CHANNEL, { nonce });
+      }
+    }
+  }
+
   it("keeps an unknown string rollIn on the action route when the action is open", async () => {
     // #given
     obrConfig.actionIsOpen = true;
-    const payload = { ...samplePayload, rollIn: "sideways" } as unknown as RollRequest;
-    const promise = relayRollRequest(payload);
-    await Promise.resolve();
-    await Promise.resolve();
-    const ping = obrCalls.broadcast.find((b) => b.channel === INTERNAL_PING_CHANNEL);
-    simulateBroadcast(INTERNAL_READY_CHANNEL, {
-      nonce: (ping!.data as { nonce: string }).nonce,
-    });
+    vi.useFakeTimers();
+    try {
+      const payload = { ...samplePayload, rollIn: "sideways" } as unknown as RollRequest;
+      const promise = relayRollRequest(payload);
+      await Promise.resolve();
+      await Promise.resolve();
+      answerRollPings();
+      await vi.advanceTimersByTimeAsync(2100);
+      answerRollPings();
 
-    // #when
-    await promise;
+      // #when
+      await promise;
 
-    // #then
-    expect([
-      obrCalls.actionOpenCount,
-      obrCalls.broadcast.find((b) => b.channel === INTERNAL_ROLL_CHANNEL)?.data,
-      obrCalls.broadcast.some((b) => b.channel === POPOVER_PING_CHANNEL),
-    ]).toEqual([1, payload, false]);
+      // #then
+      expect([
+        obrCalls.actionOpenCount,
+        obrCalls.broadcast.find((b) => b.channel === INTERNAL_ROLL_CHANNEL)?.data,
+        obrCalls.broadcast.some((b) => b.channel === POPOVER_PING_CHANNEL),
+      ]).toEqual([1, payload, false]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("keeps a numeric rollIn on the ready popover route when the action is closed", async () => {
     // #given
-    const payload = { ...samplePayload, rollIn: 7 } as unknown as RollRequest;
-    const promise = relayRollRequest(payload);
-    await Promise.resolve();
-    await Promise.resolve();
-    const ping = obrCalls.broadcast.find((b) => b.channel === POPOVER_PING_CHANNEL);
-    simulateBroadcast(POPOVER_READY_CHANNEL, {
-      nonce: (ping!.data as { nonce: string }).nonce,
-    });
+    vi.useFakeTimers();
+    try {
+      const payload = { ...samplePayload, rollIn: 7 } as unknown as RollRequest;
+      const promise = relayRollRequest(payload);
+      await Promise.resolve();
+      await Promise.resolve();
+      answerRollPings();
+      await vi.advanceTimersByTimeAsync(2100);
+      answerRollPings();
 
-    // #when
-    await promise;
+      // #when
+      await promise;
 
-    // #then
-    expect([
-      obrCalls.actionOpenCount,
-      obrCalls.broadcast.find((b) => b.channel === POPOVER_ROLL_CHANNEL)?.data,
-      obrCalls.broadcast.some((b) => b.channel === INTERNAL_PING_CHANNEL),
-    ]).toEqual([0, payload, false]);
+      // #then
+      expect([
+        obrCalls.actionOpenCount,
+        obrCalls.broadcast.find((b) => b.channel === POPOVER_ROLL_CHANNEL)?.data,
+        obrCalls.broadcast.some((b) => b.channel === INTERNAL_PING_CHANNEL),
+      ]).toEqual([0, payload, false]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("uses the action route for window rollIn when the action is closed", async () => {
@@ -228,24 +249,28 @@ describe("relayRollRequest rollIn", () => {
   it("uses the action route for window rollIn when the action is open", async () => {
     // #given
     obrConfig.actionIsOpen = true;
-    const payload = { ...samplePayload, rollIn: "window" } as RollRequest;
-    const promise = relayRollRequest(payload);
-    await Promise.resolve();
-    await Promise.resolve();
-    const ping = obrCalls.broadcast.find((b) => b.channel === INTERNAL_PING_CHANNEL);
-    simulateBroadcast(INTERNAL_READY_CHANNEL, {
-      nonce: (ping!.data as { nonce: string }).nonce,
-    });
+    vi.useFakeTimers();
+    try {
+      const payload = { ...samplePayload, rollIn: "window" } as RollRequest;
+      const promise = relayRollRequest(payload);
+      await Promise.resolve();
+      await Promise.resolve();
+      answerRollPings();
+      await vi.advanceTimersByTimeAsync(2100);
+      answerRollPings();
 
-    // #when
-    await promise;
+      // #when
+      await promise;
 
-    // #then
-    expect([
-      obrCalls.actionOpenCount,
-      obrCalls.broadcast.find((b) => b.channel === INTERNAL_ROLL_CHANNEL)?.data,
-      obrCalls.broadcast.some((b) => b.channel === POPOVER_PING_CHANNEL),
-    ]).toEqual([1, payload, false]);
+      // #then
+      expect([
+        obrCalls.actionOpenCount,
+        obrCalls.broadcast.find((b) => b.channel === INTERNAL_ROLL_CHANNEL)?.data,
+        obrCalls.broadcast.some((b) => b.channel === POPOVER_PING_CHANNEL),
+      ]).toEqual([1, payload, false]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("uses the ready popover route for tray rollIn when the action is open", async () => {
