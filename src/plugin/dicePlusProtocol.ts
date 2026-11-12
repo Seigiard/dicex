@@ -23,6 +23,17 @@ export const INTERNAL_PING_CHANNEL = "rodeo.owlbear.dice/internal-ping";
 export const INTERNAL_READY_CHANNEL = "rodeo.owlbear.dice/internal-ready";
 export const INTERNAL_ROLL_CHANNEL = "rodeo.owlbear.dice/internal-roll";
 
+export const POPOVER_PING_CHANNEL = "rodeo.owlbear.dice/popover-ping";
+export const POPOVER_READY_CHANNEL = "rodeo.owlbear.dice/popover-ready";
+export const POPOVER_ROLL_CHANNEL = "rodeo.owlbear.dice/popover-roll";
+export const DICE_PLUS_FEATURE_ROLL_IN = "rollIn";
+
+export interface DicePlusRollChannels {
+  ping: string;
+  ready: string;
+  roll: string;
+}
+
 export function rollResultChannel(source: string): string {
   return `${source}/roll-result`;
 }
@@ -48,6 +59,8 @@ export interface IsReadyResponse {
   requestId: string;
   ready: true;
   timestamp: number;
+  /** Capabilities supported by this Dice+ implementation. */
+  features?: string[];
   /** Whether the GM allowed `source` to roll in this room. Only when the request named a source. */
   permitted?: boolean;
 }
@@ -80,6 +93,15 @@ export interface RollRequest {
   timestamp: number;
   /** Requester's extension id; used as the prefix for response channels. */
   source: string;
+  /** Where dicex should run the roll; unknown wire values are treated as `auto`. */
+  rollIn?: RollIn;
+}
+
+export type RollIn = "auto" | "window" | "tray";
+
+export function resolveRollIn(value: unknown): RollIn {
+  if (value === "window" || value === "tray") return value;
+  return "auto";
 }
 
 export interface DicePlusDie {

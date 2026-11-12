@@ -74,6 +74,7 @@ describe("Dice+ access control", () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     resetStores();
     resetObrCalls();
+    obrConfig.actionIsOpen = true;
     unsubscribe = mountDicePlusBackgroundListeners();
   });
 
@@ -304,7 +305,10 @@ describe("Dice+ access control", () => {
       });
       await settle();
       // #then
-      expect(readyReplies()[0].permitted).toBe(true);
+      expect([
+        readyReplies()[0].permitted,
+        readyReplies()[0].features,
+      ]).toEqual([true, ["rollIn"]]);
     });
 
     it("reports permitted: false for a source the GM has not allowed", async () => {
@@ -319,7 +323,7 @@ describe("Dice+ access control", () => {
       expect(readyReplies()[0].permitted).toBe(false);
     });
 
-    it("keeps the old reply shape for a request without source", async () => {
+    it("keeps permitted absent and advertises rollIn without source", async () => {
       // #when
       simulateBroadcast(DICE_PLUS_IS_READY_CHANNEL, {
         requestId: "q-1",
@@ -328,6 +332,7 @@ describe("Dice+ access control", () => {
       await settle();
       // #then
       expect(Object.keys(readyReplies()[0]).sort()).toEqual([
+        "features",
         "ready",
         "requestId",
         "timestamp",
