@@ -19,6 +19,15 @@ import {
   INTERNAL_ROLL_CHANNEL,
 } from "./dicePlusProtocol";
 
+const popoverChannels = {
+  ping: "rodeo.owlbear.dice/popover-ping",
+  ready: "rodeo.owlbear.dice/popover-ready",
+  roll: "rodeo.owlbear.dice/popover-roll",
+};
+const createPopoverRollHandler = createDicePlusInternalRollHandler as (
+  channels: typeof popoverChannels
+) => () => void;
+
 describe("dicePlusInternalRollHandler", () => {
   let unsubscribe: () => void;
 
@@ -208,5 +217,56 @@ describe("dicePlusInternalRollHandler", () => {
       const roll = useDiceRollStore.getState().roll;
       expect([roll?.hidden, roll?.hiddenAudience]).toEqual([false, undefined]);
     });
+  });
+
+  it("a popover handler answers and rolls only on popover channels", async () => {
+    // #given
+    unsubscribe();
+    unsubscribe = createPopoverRollHandler(popoverChannels);
+    // #when
+    simulateBroadcast(popoverChannels.ping, { nonce: "popover-1" });
+    simulateBroadcast(popoverChannels.roll, {
+      rollId: "popover-roll",
+      playerId: "p-1",
+      playerName: "Alice",
+      rollTarget: "dm",
+      diceNotation: "1d6",
+      showResults: true,
+      timestamp: 0,
+      source: "com.example.forge",
+    });
+    await flushPromises();
+
+    // #then
+    expect([
+      obrCalls.broadcast.map((broadcast) => broadcast.channel),
+      useDiceRollStore.getState().roll?.hidden,
+      useDiceRollStore.getState().roll?.hiddenAudience,
+    ]).toEqual([[popoverChannels.ready], true, "gm"]);
+  });
+
+  it("the action handler ignores popover pings and rolls", async () => {
+    // #given
+    // The default action handler is mounted by beforeEach.
+    // #when
+    simulateBroadcast(popoverChannels.ping, { nonce: "popover-2" });
+    simulateBroadcast(popoverChannels.roll, {
+      rollId: "ignored-popover-roll",
+      playerId: "p-1",
+      playerName: "Alice",
+      rollTarget: "everyone",
+      diceNotation: "1d6",
+      showResults: true,
+      timestamp: 0,
+      source: "com.example.forge",
+    });
+    await flushPromises();
+
+    // #then
+    expect([
+      obrCalls.broadcast,
+      useDiceRollStore.getState().roll,
+      getPendingRollRequest(),
+    ]).toEqual([[], null, null]);
   });
 });
