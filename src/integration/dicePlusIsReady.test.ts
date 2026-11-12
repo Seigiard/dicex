@@ -18,7 +18,7 @@ describe("Dice+ isReady", () => {
 
   afterEach(() => unsub());
 
-  it("responds with { requestId, ready: true, timestamp } on the same channel", async () => {
+  it("responds with its rollIn feature on the same channel", async () => {
     simulateBroadcast(DICE_PLUS_IS_READY_CHANNEL, {
       requestId: "rq-9",
       timestamp: 100,
@@ -32,9 +32,12 @@ describe("Dice+ isReady", () => {
     );
     expect(replies).toHaveLength(1);
     const data = replies[0].data as any;
-    expect(data.requestId).toBe("rq-9");
-    expect(data.ready).toBe(true);
-    expect(typeof data.timestamp).toBe("number");
+    expect([
+      data.requestId,
+      data.ready,
+      typeof data.timestamp,
+      data.features,
+    ]).toEqual(["rq-9", true, "number", ["rollIn"]]);
   });
 
   it("does not loop on its own ready response", async () => {
