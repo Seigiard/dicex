@@ -7,9 +7,11 @@ export type PendingRollRequest = Pick<
 >;
 
 let pending: PendingRollRequest | null = null;
+const listeners = new Set<(request: PendingRollRequest) => void>();
 
 export function setPendingRollRequest(req: PendingRollRequest): void {
   pending = req;
+  for (const listener of listeners) listener(req);
 }
 
 export function getPendingRollRequest(): PendingRollRequest | null {
@@ -18,4 +20,11 @@ export function getPendingRollRequest(): PendingRollRequest | null {
 
 export function clearPendingRollRequest(): void {
   pending = null;
+}
+
+export function subscribePendingRollRequest(
+  listener: (request: PendingRollRequest) => void
+): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 }

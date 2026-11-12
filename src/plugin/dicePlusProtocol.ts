@@ -23,6 +23,16 @@ export const INTERNAL_PING_CHANNEL = "rodeo.owlbear.dice/internal-ping";
 export const INTERNAL_READY_CHANNEL = "rodeo.owlbear.dice/internal-ready";
 export const INTERNAL_ROLL_CHANNEL = "rodeo.owlbear.dice/internal-roll";
 
+export const POPOVER_PING_CHANNEL = "rodeo.owlbear.dice/popover-ping";
+export const POPOVER_READY_CHANNEL = "rodeo.owlbear.dice/popover-ready";
+export const POPOVER_ROLL_CHANNEL = "rodeo.owlbear.dice/popover-roll";
+
+export interface DicePlusRollChannels {
+  ping: string;
+  ready: string;
+  roll: string;
+}
+
 export function rollResultChannel(source: string): string {
   return `${source}/roll-result`;
 }

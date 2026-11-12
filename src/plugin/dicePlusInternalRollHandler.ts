@@ -1,6 +1,7 @@
 import OBR from "@owlbear-rodeo/sdk";
 import { rollFromNotation } from "../helpers/rollFromNotation";
 import {
+  DicePlusRollChannels,
   INTERNAL_PING_CHANNEL,
   INTERNAL_READY_CHANNEL,
   INTERNAL_ROLL_CHANNEL,
@@ -11,19 +12,26 @@ import {
 import { setPendingRollRequest } from "./dicePlusPendingRequest";
 
 /**
- * Mount the action-sidebar-side Dice+ listeners.
+ * Mount Dice+ ping and roll listeners on the given channel set. The action
+ * sidebar's internal channels are used by default; the popover passes its own.
  * Returns an unsubscribe that tears down both channels.
  */
-export function createDicePlusInternalRollHandler(): () => void {
-  const unsubPing = OBR.broadcast.onMessage(INTERNAL_PING_CHANNEL, (event) => {
+export function createDicePlusInternalRollHandler(
+  channels: DicePlusRollChannels = {
+    ping: INTERNAL_PING_CHANNEL,
+    ready: INTERNAL_READY_CHANNEL,
+    roll: INTERNAL_ROLL_CHANNEL,
+  }
+): () => void {
+  const unsubPing = OBR.broadcast.onMessage(channels.ping, (event) => {
     OBR.broadcast.sendMessage(
-      INTERNAL_READY_CHANNEL,
+      channels.ready,
       event.data,
       { destination: "LOCAL" }
     );
   });
 
-  const unsubRoll = OBR.broadcast.onMessage(INTERNAL_ROLL_CHANNEL, (event) => {
+  const unsubRoll = OBR.broadcast.onMessage(channels.roll, (event) => {
     const request = event.data as RollRequest;
 
     setPendingRollRequest({
