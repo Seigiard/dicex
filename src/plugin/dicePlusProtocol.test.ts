@@ -76,6 +76,13 @@ describe("isRollRequest", () => {
       expect(isRollRequest({ ...valid, rollTarget: target })).toBe(true);
     }
   });
+
+  it("accepts unknown rollIn values", () => {
+    expect([
+      isRollRequest({ ...valid, rollIn: "sideways" }),
+      isRollRequest({ ...valid, rollIn: 7 }),
+    ]).toEqual([true, true]);
+  });
 });
 
 describe("isIsReadyRequest", () => {
