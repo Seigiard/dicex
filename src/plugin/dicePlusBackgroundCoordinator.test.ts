@@ -142,7 +142,7 @@ describe("relayRollRequest rollIn", () => {
   it("keeps an unknown string rollIn on the action route when the action is open", async () => {
     // #given
     obrConfig.actionIsOpen = true;
-    const payload = { ...samplePayload, rollIn: "sideways" } as RollRequest;
+    const payload = { ...samplePayload, rollIn: "sideways" } as unknown as RollRequest;
     const promise = relayRollRequest(payload);
     await Promise.resolve();
     await Promise.resolve();
@@ -164,7 +164,7 @@ describe("relayRollRequest rollIn", () => {
 
   it("keeps a numeric rollIn on the ready popover route when the action is closed", async () => {
     // #given
-    const payload = { ...samplePayload, rollIn: 7 } as RollRequest;
+    const payload = { ...samplePayload, rollIn: 7 } as unknown as RollRequest;
     const promise = relayRollRequest(payload);
     await Promise.resolve();
     await Promise.resolve();
