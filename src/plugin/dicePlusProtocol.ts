@@ -59,6 +59,7 @@ export interface IsReadyResponse {
   requestId: string;
   ready: true;
   timestamp: number;
+  /** Capabilities supported by this Dice+ implementation. */
   features?: string[];
   /** Whether the GM allowed `source` to roll in this room. Only when the request named a source. */
   permitted?: boolean;
@@ -93,7 +94,7 @@ export interface RollRequest {
   /** Requester's extension id; used as the prefix for response channels. */
   source: string;
   /** Where dicex should run the roll; unknown wire values are treated as `auto`. */
-  rollIn?: RollIn | string | number;
+  rollIn?: RollIn;
 }
 
 export type RollIn = "auto" | "window" | "tray";
