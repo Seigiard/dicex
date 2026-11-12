@@ -8,6 +8,7 @@ import {
   POPOVER_ROLL_CHANNEL,
   DicePlusRollChannels,
   RollRequest,
+  resolveRollIn,
 } from "./dicePlusProtocol";
 
 const HANDSHAKE_TIMEOUT_MS = 2000;
@@ -74,12 +75,7 @@ async function relayThroughChannels(
   return true;
 }
 
-export async function relayRollRequest(payload: RollRequest): Promise<void> {
-  if (await OBR.action.isOpen()) {
-    await relayThroughAction(payload);
-    return;
-  }
-
+async function relayThroughPopover(payload: RollRequest): Promise<void> {
   const relayedToPopover = await relayThroughChannels(payload, {
     ping: POPOVER_PING_CHANNEL,
     ready: POPOVER_READY_CHANNEL,
@@ -89,4 +85,25 @@ export async function relayRollRequest(payload: RollRequest): Promise<void> {
   if (!relayedToPopover) {
     await relayThroughAction(payload);
   }
+}
+
+export async function relayRollRequest(payload: RollRequest): Promise<void> {
+  const rollIn = resolveRollIn(payload.rollIn);
+
+  if (rollIn === "window") {
+    await relayThroughAction(payload);
+    return;
+  }
+
+  if (rollIn === "tray") {
+    await relayThroughPopover(payload);
+    return;
+  }
+
+  if (await OBR.action.isOpen()) {
+    await relayThroughAction(payload);
+    return;
+  }
+
+  await relayThroughPopover(payload);
 }

@@ -4,6 +4,7 @@ import {
   ACCESS_DECISION_TIMEOUT_MS,
   AccessResponse,
   AccessStatus,
+  DICE_PLUS_FEATURE_ROLL_IN,
   DICE_PLUS_IS_READY_CHANNEL,
   DICE_PLUS_REQUEST_ACCESS_CHANNEL,
   DICE_PLUS_ROLL_REQUEST_CHANNEL,
@@ -41,9 +42,8 @@ export function mountDicePlusBackgroundListeners(): () => void {
           requestId: req.requestId,
           ready: true,
           timestamp: Date.now(),
+          features: [DICE_PLUS_FEATURE_ROLL_IN],
         };
-        // Callers that predate access control send no source; their reply
-        // keeps its old shape.
         if (typeof req.source === "string") {
           response.permitted =
             (await getAccessDecision(req.source)) === "allowed";
