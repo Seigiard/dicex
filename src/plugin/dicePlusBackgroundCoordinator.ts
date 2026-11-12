@@ -3,6 +3,10 @@ import {
   INTERNAL_PING_CHANNEL,
   INTERNAL_READY_CHANNEL,
   INTERNAL_ROLL_CHANNEL,
+  POPOVER_PING_CHANNEL,
+  POPOVER_READY_CHANNEL,
+  POPOVER_ROLL_CHANNEL,
+  DicePlusRollChannels,
   RollRequest,
 } from "./dicePlusProtocol";
 
@@ -12,44 +16,77 @@ function makeNonce(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-/** Resolve once an internal-ready reply with a matching nonce arrives, or after the timeout. */
-function awaitReady(nonce: string, timeoutMs: number): Promise<void> {
+/** Resolve once a ready reply arrives, or after the handshake timeout. */
+function awaitReady(
+  readyChannel: string,
+  nonce: string,
+  timeoutMs: number
+): Promise<boolean> {
   return new Promise((resolve) => {
     let done = false;
-    const finish = () => {
+    const finish = (ready: boolean) => {
       if (done) return;
       done = true;
       unsub();
       clearTimeout(timer);
-      resolve();
+      resolve(ready);
     };
 
-    const unsub = OBR.broadcast.onMessage(INTERNAL_READY_CHANNEL, (event) => {
+    const unsub = OBR.broadcast.onMessage(readyChannel, (event) => {
       const data = event.data as { nonce?: string };
-      if (data?.nonce === nonce) finish();
+      if (data?.nonce === nonce) finish(true);
     });
 
-    const timer = setTimeout(finish, timeoutMs);
+    const timer = setTimeout(() => finish(false), timeoutMs);
   });
 }
 
-export async function relayRollRequest(payload: RollRequest): Promise<void> {
+async function relayThroughAction(payload: RollRequest): Promise<void> {
   await OBR.action.open();
+  await relayThroughChannels(payload, {
+    ping: INTERNAL_PING_CHANNEL,
+    ready: INTERNAL_READY_CHANNEL,
+    roll: INTERNAL_ROLL_CHANNEL,
+  }, true);
+}
 
+async function relayThroughChannels(
+  payload: RollRequest,
+  channels: DicePlusRollChannels,
+  sendRollOnTimeout = false
+): Promise<boolean> {
   const nonce = makeNonce();
-  const ready = awaitReady(nonce, HANDSHAKE_TIMEOUT_MS);
+  const ready = awaitReady(channels.ready, nonce, HANDSHAKE_TIMEOUT_MS);
 
   await OBR.broadcast.sendMessage(
-    INTERNAL_PING_CHANNEL,
+    channels.ping,
     { nonce },
     { destination: "LOCAL" }
   );
 
-  await ready;
+  if (!(await ready) && !sendRollOnTimeout) return false;
 
   await OBR.broadcast.sendMessage(
-    INTERNAL_ROLL_CHANNEL,
+    channels.roll,
     payload,
     { destination: "LOCAL" }
   );
+  return true;
+}
+
+export async function relayRollRequest(payload: RollRequest): Promise<void> {
+  if (await OBR.action.isOpen()) {
+    await relayThroughAction(payload);
+    return;
+  }
+
+  const relayedToPopover = await relayThroughChannels(payload, {
+    ping: POPOVER_PING_CHANNEL,
+    ready: POPOVER_READY_CHANNEL,
+    roll: POPOVER_ROLL_CHANNEL,
+  });
+
+  if (!relayedToPopover) {
+    await relayThroughAction(payload);
+  }
 }

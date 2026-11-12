@@ -4,10 +4,16 @@ import { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 
 import { PopoverTray } from "./PopoverTray";
+import {
+  DicePlusPopoverRollTray,
+  LOCAL_ROLL_TRAY_KEY,
+} from "./DicePlusPopoverRollTray";
+import { mountDicePlusPopoverRollHost } from "./dicePlusPopoverRollHost";
 import { getPluginId } from "./getPluginId";
 import { useGmRollRevealSubscription } from "./gmRollReveal";
 
 export function PopoverTrays() {
+  useEffect(() => mountDicePlusPopoverRollHost(), []);
   useGmRollRevealSubscription();
   const [players, setPlayers] = useState<Player[]>([]);
 
@@ -21,7 +27,9 @@ export function PopoverTrays() {
   useEffect(() => {
     const playerIds = players.map((p) => p.connectionId);
     setVisibleTrays((visible) =>
-      visible.filter((id) => playerIds.includes(id))
+      visible.filter(
+        (id) => id === LOCAL_ROLL_TRAY_KEY || playerIds.includes(id)
+      )
     );
   }, [players]);
 
@@ -68,6 +76,7 @@ export function PopoverTrays() {
       top="0"
       overflow="hidden"
     >
+      <DicePlusPopoverRollTray onToggle={handleTrayToggle} />
       {players.map((player) => (
         <PopoverTray
           key={player.connectionId}

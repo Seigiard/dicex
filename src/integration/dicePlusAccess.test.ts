@@ -74,6 +74,7 @@ describe("Dice+ access control", () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     resetStores();
     resetObrCalls();
+    obrConfig.actionIsOpen = true;
     unsubscribe = mountDicePlusBackgroundListeners();
   });
 
