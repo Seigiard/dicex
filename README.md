@@ -38,6 +38,19 @@ A visibility toggle that defaults to hidden for GMs and visible for players. Hid
 
 Other Owlbear Rodeo extensions can ask dicex to roll on their behalf, using the Dice+ broadcast protocol. A request is sent on `dice-plus/roll-request` with `{ destination: "LOCAL" }`; the result comes back on `{source}/roll-result`, or an error on `{source}/roll-error`. The authoritative payload types are exported from `src/plugin/dicePlusProtocol.ts`.
 
+**The GM decides which extensions may roll.** Access is per room and denied by default. The GM's answers are stored in room metadata under `rodeo.owlbear.dice/access` as `{ allowed: string[], denied: string[] }`, keyed by `source`.
+
+- **First roll from an unknown source waits for the GM.** Dicex asks every GM in the room with a modal: *Extension `<source>` wants to roll dice in this room. Allow?* (**Allow** / **Deny**). The first GM to answer decides; the other GMs' modals close. The request waits up to 25 seconds (`ACCESS_DECISION_TIMEOUT_MS`), then rolls on Allow or fails on Deny or no answer.
+- **No GM in the room, no access.** A roll request from a source without an answer fails at once.
+- **Errors** arrive on `{source}/roll-error` with `error` set to `"not-permitted"` (denied, or no answer within 25 s) or `"no-gm"` (no GM in the room).
+- **Ask up front** with `dice-plus/request-access` `{ requestId, source }` (`destination: "LOCAL"`). The reply arrives on `{source}/access` as `{ requestId, status }`, where `status` is `"allowed"`, `"denied"`, `"no-gm"`, or `"pending"`. After `"pending"`, a second reply with the same `requestId` follows: `"allowed"`, `"denied"`, or `"timeout"` after 25 s without an answer.
+- **Check without asking**: add `source` to the `dice-plus/isReady` request, and the reply carries `permitted: boolean`. Without `source`, the reply keeps its old shape.
+- **Change an answer** in Dicex: Tools → *Extension Access* (GM only) lists allowed and denied extensions. Remove one to be asked again on its next roll.
+- **This is a courtesy prompt, not security.** It stops rolls nobody asked for. It does not stop impersonation:
+  - `source` is self-declared, so one extension can send another's id.
+  - A per-source secret would not help. OBR broadcasts and room metadata are readable by every extension in the room, so a secret sent on `{source}/access` reaches an impostor too.
+  - Room metadata is writable by any client. Dicex writes the list only from a GM's client, but an extension running on a player's client could edit it directly, and dicex cannot prevent that.
+
 **The caller chooses who sees the roll.** A request carries a `rollTarget`, and dicex does what it says, whatever the `source`. The roller always sees their own dice.
 
 | `rollTarget` | Other players | GM | Rumble chat message |

@@ -26,11 +26,12 @@ This is a 3D dice roller [Owlbear Rodeo VTT extension](https://extensions.owlbea
 
 **The key insight**: Because Rapier is deterministic, only the initial throw parameters need to be synced over the network — each client runs its own identical simulation and produces the same result.
 
-### Three separate entry points (three separate Vite builds):
+### Separate entry points (separate Vite builds):
 
 - `src/main.tsx` → standalone dice tray at `dice.owlbear.rodeo`
 - `src/popover.tsx` → embedded popover within Owlbear Rodeo showing synced player rolls
 - `src/background.ts` → background service managing plugin communication
+- `src/accessPrompt.tsx` → GM modal asking whether an extension may roll dice in the room
 
 ### State management (Zustand):
 
@@ -62,6 +63,8 @@ Four folders must be updated together: `src/materials/` (PBR textures), `src/mes
 | `src/plugin/` | All Owlbear SDK integration code |
 | `src/plugin/dicePlusProtocol.ts` | Dice+ integration contract: payload types, channels, and `resolveHidden` / `resolveHiddenAudience`, which map a request's `rollTarget` onto roll visibility |
 | `src/plugin/gmRollReveal.ts` | Sends a `hiddenAudience: "gm"` roll's throws and values to GM clients, which replay it in their trays |
+| `src/plugin/dicePlusAccess.ts` | Per-room record of the extensions a GM allowed or denied to roll, and the roller-side wait for a GM's answer |
+| `src/plugin/dicePlusAccessHost.ts` | GM-side background host that opens the `access-prompt.html` modal for extensions waiting for an answer |
 | `src/plugin/rollLoggerSubscription.ts` | Subscribes to roll events and logs them |
 | `src/plugin/rumbleSyncSubscription.ts` | Subscribes to rumble (screen shake) sync events |
 | `src/audio/` | Procedural Web Audio API dice impact sounds |

@@ -4,6 +4,7 @@ import {
   resetObrCalls,
   simulateBroadcast,
   flushPromises,
+  allowDicePlusSource,
 } from "../integration/setup";
 import { mountDicePlusBackgroundListeners } from "./dicePlusBackgroundListeners";
 import {
@@ -17,6 +18,7 @@ describe("Dice+ background listeners", () => {
 
   beforeEach(() => {
     resetObrCalls();
+    allowDicePlusSource("com.example.forge");
     unsubscribe = mountDicePlusBackgroundListeners();
   });
 
@@ -77,10 +79,8 @@ describe("Dice+ background listeners", () => {
       source: "com.example.forge",
     };
     simulateBroadcast(DICE_PLUS_ROLL_REQUEST_CHANNEL, payload);
-    // Allow the async relay to begin (open + ping).
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
+    // Allow the access check and the async relay to begin (open + ping).
+    await flushPromises();
 
     expect(obrCalls.actionOpenCount).toBe(1);
     const ping = obrCalls.broadcast.find(

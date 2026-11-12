@@ -17,6 +17,7 @@ export default defineConfig({
         main: resolve(__dirname, "index.html"),
         popover: resolve(__dirname, "popover.html"),
         background: resolve(__dirname, "background.html"),
+        accessPrompt: resolve(__dirname, "access-prompt.html"),
       },
     },
   },

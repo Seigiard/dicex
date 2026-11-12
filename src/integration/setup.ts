@@ -31,6 +31,7 @@ export const obrCalls = {
     options?: { destination: "REMOTE" | "LOCAL" | "ALL" };
   }[],
   actionOpenCount: 0,
+  modal: [] as { action: "open" | "close"; id: string; url?: string }[],
 };
 
 export const obrConfig = {
@@ -48,6 +49,8 @@ export const obrConfig = {
 };
 
 type BroadcastListener = (event: { data: unknown; connectionId: string }) => void;
+type MetadataListener = (metadata: Record<string, unknown>) => void;
+const roomMetadataListeners = new Set<MetadataListener>();
 const broadcastListeners: Record<string, Set<BroadcastListener>> = {};
 
 export function simulateBroadcast(
@@ -95,6 +98,25 @@ vi.mock("@owlbear-rodeo/sdk", () => ({
       setMetadata: vi.fn((data: Record<string, unknown>) => {
         applyMetadataUpdate(obrConfig.roomMetadata, data);
         obrCalls.roomSetMetadata.push(data);
+        for (const listener of roomMetadataListeners) {
+          listener({ ...obrConfig.roomMetadata });
+        }
+        return Promise.resolve();
+      }),
+      onMetadataChange: vi.fn((callback: MetadataListener) => {
+        roomMetadataListeners.add(callback);
+        return () => {
+          roomMetadataListeners.delete(callback);
+        };
+      }),
+    },
+    modal: {
+      open: vi.fn((modal: { id: string; url: string }) => {
+        obrCalls.modal.push({ action: "open", id: modal.id, url: modal.url });
+        return Promise.resolve();
+      }),
+      close: vi.fn((id: string) => {
+        obrCalls.modal.push({ action: "close", id });
         return Promise.resolve();
       }),
     },
@@ -171,6 +193,8 @@ export function resetObrCalls() {
   obrCalls.sceneSetMetadata.length = 0;
   obrCalls.broadcast.length = 0;
   obrCalls.actionOpenCount = 0;
+  obrCalls.modal.length = 0;
+  roomMetadataListeners.clear();
   obrConfig.roomMetadata = {};
   obrConfig.sceneMetadata = {};
   obrConfig.sceneItems = [];
@@ -254,4 +278,16 @@ export function simulateRoll(config: SimulateRollConfig): string[] {
 
 export function flushPromises(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/** Record in room metadata that the GM allowed `source` to roll. */
+export function allowDicePlusSource(source: string): void {
+  const key = "rodeo.owlbear.dice/access";
+  const current = (obrConfig.roomMetadata[key] as
+    | { allowed: string[]; denied: string[] }
+    | undefined) ?? { allowed: [], denied: [] };
+  obrConfig.roomMetadata[key] = {
+    allowed: [...current.allowed, source],
+    denied: current.denied,
+  };
 }
